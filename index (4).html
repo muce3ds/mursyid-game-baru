@@ -1,0 +1,326 @@
+<!doctype html>
+<html lang="ms">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
+<title>PenaCraft 3D — Misi Bina Ayat</title>
+<style>
+  :root{
+    --bg:#eaf7ff; --panel:#ffffff; --ink:#18324a; --muted:#567086;
+    --line:#b8d7ea; --accent:#0f7abf; --accent2:#ffb703; --ok:#168f55; --bad:#c83e4d;
+    --shadow:0 14px 40px rgba(24,50,74,.16);
+    --radius:22px;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%;font-family:Verdana,Arial,sans-serif;background:var(--bg);color:var(--ink);overflow:hidden}
+  button,input,textarea{font:inherit}
+  button{cursor:pointer}
+  .hidden{display:none!important}
+  #app{position:relative;width:100%;height:100%}
+  #gl{position:absolute;inset:0;width:100%;height:100%;display:block;background:linear-gradient(#9bdcf7,#eefbff 66%,#b4e08d)}
+  #topbar{position:absolute;top:10px;left:10px;right:10px;z-index:12;display:flex;gap:8px;align-items:center;justify-content:space-between;pointer-events:none}
+  #topbar .group{display:flex;gap:8px;align-items:center;flex-wrap:wrap;pointer-events:auto}
+  .pill{background:rgba(255,255,255,.93);border:2px solid var(--line);border-radius:999px;padding:9px 13px;font-weight:700;box-shadow:0 5px 16px rgba(20,60,90,.12)}
+  .btn{border:0;border-radius:16px;padding:11px 16px;font-weight:800;background:var(--accent);color:white;box-shadow:0 5px 0 rgba(0,0,0,.12);min-height:46px}
+  .btn:active{transform:translateY(2px);box-shadow:0 3px 0 rgba(0,0,0,.12)}
+  .btn.secondary{background:#fff;color:var(--ink);border:2px solid var(--line);box-shadow:none}
+  .btn.warn{background:#e76f51}.btn.ok{background:var(--ok)}.btn.yellow{background:#ffb703;color:#302900}
+  .btn:disabled{opacity:.45;cursor:not-allowed;transform:none}
+  #hud{position:absolute;left:12px;bottom:12px;z-index:11;background:rgba(255,255,255,.92);border:2px solid var(--line);border-radius:18px;padding:10px 12px;max-width:min(520px,calc(100% - 24px));box-shadow:var(--shadow)}
+  #hud strong{font-size:17px} #hud .small{font-size:13px;color:var(--muted);margin-top:4px;line-height:1.35}
+  #controls{position:absolute;z-index:11;right:16px;bottom:18px;display:grid;grid-template-columns:58px 58px 58px;grid-template-rows:58px 58px;gap:7px;touch-action:none}
+  .move{border:2px solid rgba(255,255,255,.9);border-radius:16px;background:rgba(15,122,191,.87);color:#fff;font-weight:900;font-size:24px;box-shadow:0 6px 16px rgba(0,0,0,.16)}
+  .move[data-k="w"]{grid-column:2}.move[data-k="a"]{grid-row:2;grid-column:1}.move[data-k="s"]{grid-row:2;grid-column:2}.move[data-k="d"]{grid-row:2;grid-column:3}
+  #interact{position:absolute;z-index:11;right:22px;bottom:148px;display:none}
+  #stationHint{position:absolute;z-index:10;top:76px;left:50%;transform:translateX(-50%);background:#fff7d7;border:2px solid #f1c44c;border-radius:16px;padding:8px 14px;font-weight:800;box-shadow:var(--shadow);display:none;text-align:center}
+  .screen{position:absolute;inset:0;z-index:30;background:linear-gradient(145deg,#e5f7ff,#fff7d8);display:flex;align-items:center;justify-content:center;padding:18px;overflow:auto}
+  .card{width:min(980px,96vw);background:rgba(255,255,255,.97);border:3px solid var(--line);border-radius:28px;padding:24px;box-shadow:var(--shadow)}
+  .card h1,.card h2{margin:.1em 0 .35em;line-height:1.15}.card p{line-height:1.55}
+  .hero{display:grid;grid-template-columns:1.2fr .8fr;gap:22px;align-items:center}.heroArt{min-height:280px;border-radius:26px;background:linear-gradient(160deg,#8dd7ff,#dff7ff 50%,#cceca4 51%,#8bd06d);position:relative;overflow:hidden;border:3px solid #fff;box-shadow:inset 0 0 0 2px var(--line)}
+  .cube{position:absolute;width:70px;height:70px;background:#f6c453;border:5px solid #925d18;border-radius:9px;transform:rotate(12deg);box-shadow:inset -12px -12px 0 rgba(0,0,0,.08)}
+  .cube.one{left:18%;bottom:24%}.cube.two{left:50%;bottom:18%;background:#64c7ff}.cube.three{right:12%;bottom:38%;background:#86d96d}
+  .heroArt .avatar{position:absolute;left:40%;bottom:18%;width:72px;height:130px}.avatar .head{position:absolute;left:13px;top:0;width:46px;height:46px;background:#f1b77c;border-radius:8px;border:4px solid #6f3b19}.avatar .body{position:absolute;left:4px;top:43px;width:64px;height:64px;background:#2f7dd1;border:4px solid #163d6f;border-radius:8px}.avatar .leg{position:absolute;top:101px;width:24px;height:29px;background:#355070;border:4px solid #1a2b42}.avatar .l1{left:7px}.avatar .l2{right:7px}
+  .tag{display:inline-block;padding:7px 10px;border-radius:999px;background:#e6f4ff;border:1px solid #b8d7ea;font-weight:800;margin:3px}
+  .choiceGrid{display:grid;grid-template-columns:1fr 1fr;gap:14px}.choice{padding:20px;text-align:left;border:3px solid var(--line);border-radius:22px;background:#fff;min-height:130px}.choice:hover{border-color:var(--accent)}.choice b{display:block;font-size:21px;margin-bottom:7px}
+  label{font-weight:800}.field{width:100%;border:2px solid var(--line);border-radius:15px;padding:12px;background:#fbfeff;color:var(--ink)}
+  textarea.field{min-height:170px;resize:vertical;line-height:1.5}
+  .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}.space{justify-content:space-between}
+  #questionOverlay{position:absolute;inset:0;z-index:25;background:rgba(15,37,52,.42);display:flex;align-items:center;justify-content:center;padding:14px;overflow:auto}
+  #questionCard{width:min(900px,98vw);background:#fff;border-radius:28px;padding:20px;border:3px solid var(--line);box-shadow:var(--shadow)}
+  .progress{height:17px;background:#e5eef4;border-radius:999px;overflow:hidden;border:1px solid #c1d7e4}.progress span{display:block;height:100%;background:linear-gradient(90deg,#20a864,#8bd66f);width:0%}
+  .sceneCue{display:grid;grid-template-columns:150px 1fr;gap:16px;align-items:center;background:#f5fbff;border:2px solid #d2e9f6;border-radius:20px;padding:14px;margin:12px 0}.sceneIcon{width:140px;height:120px;border-radius:18px;display:flex;align-items:center;justify-content:center;font-size:68px;background:linear-gradient(160deg,#d9f4ff,#fff3c9);border:2px solid #d1e5ef}.sceneCue p{font-size:20px;margin:0;line-height:1.5}
+  .targetWrap{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:14px 0}.target{min-height:122px;border:4px solid #8d6e4a;border-radius:18px;background:linear-gradient(#e9c07b,#c9924b);padding:14px;text-align:center;font-size:19px;font-weight:900;position:relative;display:flex;align-items:center;justify-content:center;box-shadow:inset 0 -12px 0 rgba(0,0,0,.07)}.target.selected{outline:5px solid #0f7abf;outline-offset:3px}.target.locked{opacity:.45}.target::before{content:'SASARAN';position:absolute;top:5px;left:8px;font-size:10px;letter-spacing:.08em;color:#5e3a18}
+  #throwBlock{display:inline-flex;align-items:center;gap:8px;padding:12px 16px;background:#6dd4ff;border:4px solid #216b8f;border-radius:15px;font-weight:900}.miniCube{width:25px;height:25px;border:3px solid #245f75;background:#8be4ff;border-radius:5px;box-shadow:inset -5px -5px 0 rgba(0,0,0,.08)}
+  #throwAnim{height:0;position:relative}.fly{position:fixed;z-index:80;width:44px;height:44px;background:#79dfff;border:4px solid #216b8f;border-radius:7px;transition:transform .58s cubic-bezier(.2,.8,.3,1),opacity .58s;pointer-events:none}
+  .feedback{padding:12px 14px;border-radius:15px;font-weight:800;margin-top:10px;display:none}.feedback.ok{display:block;background:#e0f6e8;color:#0d6d3f;border:2px solid #8fd3ab}.feedback.bad{display:block;background:#fff0f1;color:#9d2633;border:2px solid #efb3b9}
+  #writeStage{display:none}.modelSentence{font-size:26px;font-weight:900;line-height:1.5;padding:14px 16px;border:3px dashed #8fc2dd;border-radius:18px;background:#f7fcff;letter-spacing:.04em;text-align:center}.syllables{font-size:16px;color:#46687c;text-align:center;margin:8px 0 12px}
+  #writeCanvas{width:100%;height:250px;border:3px solid #88b8d2;border-radius:18px;background-color:#fff;background-image:repeating-linear-gradient(to bottom,transparent 0,transparent 49px,#dfeaf0 50px,#dfeaf0 52px);touch-action:none;display:block}
+  .toolBtn{border:2px solid var(--line);border-radius:14px;background:#fff;padding:9px 12px;font-weight:800}.toolBtn.active{background:#dff3ff;border-color:#5aa9d6}
+  .checklist{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px}.check{border:2px solid var(--line);border-radius:14px;padding:10px;background:#fbfeff;font-size:14px;font-weight:700}
+  #rewardPop{position:absolute;z-index:70;left:50%;top:50%;transform:translate(-50%,-50%);background:#fff9da;border:4px solid #f0c44d;border-radius:25px;padding:24px;text-align:center;box-shadow:0 22px 70px rgba(0,0,0,.28);display:none;min-width:min(520px,90vw)}
+  #rewardPop .big{font-size:72px}.rewardChip{display:inline-block;background:#fff;border:2px solid #f0c44d;border-radius:999px;padding:8px 13px;font-weight:900}
+  #records{max-height:55vh;overflow:auto;border:2px solid var(--line);border-radius:16px;margin:12px 0}table{border-collapse:collapse;width:100%;background:#fff}th,td{border-bottom:1px solid #d9e5ec;padding:9px;text-align:left;font-size:14px}th{position:sticky;top:0;background:#eaf7ff}
+  #confetti{position:absolute;inset:0;pointer-events:none;z-index:60;overflow:hidden}.conf{position:absolute;top:-20px;width:10px;height:18px;background:#f6c453;animation:fall 2.8s linear forwards}@keyframes fall{to{transform:translateY(110vh) rotate(680deg)}}
+  .focus #hud,.focus #stationHint{font-size:110%}.focus #gl{filter:saturate(.75) brightness(1.05)}.focus .sceneCue{background:#fff}.focus .target{font-size:21px}.focus .card{border-width:4px}
+  @media(max-width:760px){.hero{grid-template-columns:1fr}.heroArt{min-height:200px}.choiceGrid{grid-template-columns:1fr}.sceneCue{grid-template-columns:1fr;text-align:center}.sceneIcon{margin:auto}.targetWrap{grid-template-columns:1fr}.checklist{grid-template-columns:1fr}#questionOverlay{align-items:flex-start}.card{padding:17px}#topbar{right:7px;left:7px}.pill{font-size:12px;padding:8px 10px}#controls{transform:scale(.9);transform-origin:right bottom}}
+  @media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;animation-duration:.001ms!important;transition-duration:.001ms!important}.fly{transition:none!important}}
+</style>
+</head>
+<body>
+<div id="app">
+  <canvas id="gl" aria-label="Dunia 3D PenaCraft"></canvas>
+  <div id="topbar" class="hidden">
+    <div class="group">
+      <div class="pill" id="turnPill">👤 Murid</div>
+      <div class="pill" id="progressPill">⭐ 0 / 10</div>
+      <div class="pill" id="rewardPill">🎒 0 aksesori</div>
+    </div>
+    <div class="group">
+      <button class="btn secondary" id="zoomBtn">🔎 Zum: Biasa</button>
+      <button class="btn secondary" id="focusBtn">👁 Mod Fokus</button>
+      <button class="btn secondary" id="soundBtn">🔇 Bunyi: Senyap</button>
+      <button class="btn warn" id="endBtn">Tamat</button>
+    </div>
+  </div>
+  <div id="stationHint"></div>
+  <button class="btn yellow" id="interact">✍️ Mulakan Stesen</button>
+  <div id="hud" class="hidden"><strong>Gerak perlahan ke stesen bercahaya.</strong><div class="small">Papan kekunci: W A S D / anak panah. Tablet/telefon: guna butang arah. Kamera kekal tenang di belakang watak.</div></div>
+  <div id="controls" class="hidden" aria-label="Kawalan gerakan">
+    <button class="move" data-k="w">▲</button><button class="move" data-k="a">◀</button><button class="move" data-k="s">▼</button><button class="move" data-k="d">▶</button>
+  </div>
+
+  <section id="startScreen" class="screen">
+    <div class="card hero">
+      <div>
+        <span class="tag">Tahun 5</span><span class="tag">Disleksia</span><span class="tag">Bahasa Melayu</span>
+        <h1>🧱 PenaCraft 3D: Misi Bina Ayat</h1>
+        <p><b>SK 3.2:</b> Menulis perkataan, frasa dan ayat yang bermakna.<br><b>SP 3.2.1:</b> Membina dan menulis ayat.</p>
+        <p>Teroka bandar kraf, jawab cabaran <b>bina ayat</b>, kemudian <b>tulis ayat menggunakan tetikus atau stylus</b>. Setiap stesen memberi satu aksesori baharu kepada watak.</p>
+        <div class="row"><button class="btn" id="goMode">Mula ▶</button><button class="btn secondary" id="openRecordsStart">📋 Rekod PBD</button></div>
+        <p style="font-size:13px;color:var(--muted)">Direka dengan gerakan lembut, arahan ringkas, tulisan besar dan tiada konsep kalah.</p>
+      </div>
+      <div class="heroArt" aria-hidden="true"><div class="cube one"></div><div class="cube two"></div><div class="cube three"></div><div class="avatar"><div class="head"></div><div class="body"></div><div class="leg l1"></div><div class="leg l2"></div></div></div>
+    </div>
+  </section>
+
+  <section id="modeScreen" class="screen hidden">
+    <div class="card">
+      <h2>Pilih cara bermain</h2>
+      <div class="choiceGrid">
+        <button class="choice" id="singleMode"><b>👤 Murid Tunggal</b>Seorang murid bermain dan rekod disimpan pada peranti ini.</button>
+        <button class="choice" id="classMode"><b>👥 Senarai Kelas</b>Kongsi satu laptop. Masukkan nama murid, satu nama pada satu baris.</button>
+      </div>
+      <div class="row" style="margin-top:14px"><button class="btn secondary" id="backStart">← Kembali</button></div>
+    </div>
+  </section>
+
+  <section id="nameScreen" class="screen hidden">
+    <div class="card">
+      <h2 id="nameTitle">Nama Murid</h2>
+      <div id="singleFields"><label>Nama murid</label><input class="field" id="singleName" placeholder="Contoh: Aina" maxlength="40"></div>
+      <div id="classFields" class="hidden"><label>Senarai nama murid</label><textarea class="field" id="classNames" placeholder="Aina\nHakim\nSofia"></textarea><p style="color:var(--muted)">Satu nama satu baris. Senarai disimpan dalam <i>localStorage</i> peranti ini.</p></div>
+      <div class="row" style="margin-top:14px"><button class="btn" id="startGameBtn">Masuk Dunia Kraf ▶</button><button class="btn secondary" id="backMode">← Kembali</button></div>
+    </div>
+  </section>
+
+  <div id="questionOverlay" class="hidden">
+    <div id="questionCard">
+      <div class="row space"><div><b id="stationTitle">Stesen</b><div style="font-size:13px;color:var(--muted)">Langkah 1: Bina ayat • Langkah 2: Tulis ayat</div></div><button class="btn secondary" id="closeQuestion">Tutup</button></div>
+      <div class="progress"><span id="qProgress"></span></div>
+      <div id="buildStage">
+        <div class="sceneCue"><div class="sceneIcon" id="sceneIcon">📚</div><p id="sceneText"></p></div>
+        <p style="font-size:18px"><b>Arahan:</b> Pegang blok pena. Pilih sasaran yang melengkapkan ayat dengan betul, kemudian tekan <b>BALING</b>.</p>
+        <div class="row"><div id="throwBlock"><span class="miniCube"></span> Blok Pena</div><span style="color:var(--muted)">Klik satu sasaran di bawah.</span></div>
+        <div class="targetWrap" id="targets"></div>
+        <div class="row"><button class="btn yellow" id="throwBtn" disabled>🧱 BALING BLOK</button><button class="btn secondary" id="hintBtn">💡 Petunjuk</button></div>
+        <div id="feedback" class="feedback"></div>
+      </div>
+      <div id="writeStage">
+        <p><b>Bagus!</b> Sekarang salin ayat lengkap di bawah menggunakan tetikus atau stylus. Tidak perlu menaip.</p>
+        <div class="modelSentence" id="modelSentence"></div><div class="syllables" id="syllables"></div>
+        <canvas id="writeCanvas" width="900" height="250" aria-label="Ruang menulis ayat"></canvas>
+        <div class="row" style="margin-top:10px"><button class="toolBtn active" id="penBtn">✏️ Pensel</button><button class="toolBtn" id="eraserBtn">🧽 Pemadam</button><button class="toolBtn" id="clearBtn">🗑 Padam Semua</button><span id="inkState" style="font-weight:800;color:var(--muted)">Belum ada tulisan</span></div>
+        <div class="checklist"><div class="check">✅ Huruf pertama besar</div><div class="check">✅ Ada subjek + predikat</div><div class="check">✅ Ada tanda noktah</div></div>
+        <div class="row" style="margin-top:12px"><button class="btn ok" id="finishWriting" disabled>✓ Saya Sudah Menulis</button></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="rewardPop"><div class="big" id="rewardIcon">🧢</div><h2>Ganjaran Baharu!</h2><div class="rewardChip" id="rewardName">Topi Kraf</div><p id="rewardText">Aksesori terus dipakai pada watak.</p><button class="btn" id="continueBtn">Teruskan Misi ▶</button></div>
+  <div id="confetti"></div>
+
+  <section id="finishScreen" class="screen hidden">
+    <div class="card">
+      <div style="text-align:center;font-size:70px">👑</div><h1 style="text-align:center">Tahniah, <span id="finishName">Murid</span>!</h1>
+      <p style="text-align:center;font-size:19px">Semua stesen berjaya diselesaikan. Mahkota Emas PenaCraft telah dipasang!</p>
+      <div class="choiceGrid">
+        <button class="choice" id="nextStudent"><b>➡️ Murid Seterusnya</b><span id="nextNameText">Mulakan giliran murid seterusnya.</span></button>
+        <button class="choice" id="recordsBtn"><b>📋 Rekod Kelas PBD</b>Lihat jadual pencapaian dan muat turun CSV.</button>
+        <button class="choice" id="menuBtn"><b>🏠 Menu Depan</b>Kembali ke skrin mula.</button>
+        <button class="choice" id="replayBtn"><b>🔁 Main Semula</b>Ulang dunia untuk murid yang sama.</button>
+      </div>
+    </div>
+  </section>
+
+  <section id="recordsScreen" class="screen hidden">
+    <div class="card">
+      <div class="row space"><div><h2>📋 Rekod Kelas PBD</h2><p style="margin-top:0;color:var(--muted)">Rekod ini disimpan dalam pelayar peranti ini.</p></div><button class="btn secondary" id="closeRecords">Tutup</button></div>
+      <div id="records"></div>
+      <div class="row"><button class="btn" id="downloadCsv">⬇️ Muat Turun CSV</button><button class="btn secondary" id="clearRecords">Padam Rekod</button></div>
+    </div>
+  </section>
+</div>
+<script>
+'use strict';
+/* PenaCraft 3D menggunakan WebGL asli supaya satu fail HTML boleh berjalan luar talian tanpa CDN. */
+const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+const storage={
+ get(k,f){try{const v=localStorage.getItem(k);return v?JSON.parse(v):f}catch(e){return f}},
+ set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}
+};
+const QUESTIONS=[
+ {icon:'📚',cue:'Aiman berada di sudut bacaan. Lengkapkan ayat berdasarkan situasi.',stem:'Aiman',opts:['membaca buku di perpustakaan.','menendang bola di padang.','memasak sup di dapur.'],ans:0,full:'Aiman membaca buku di perpustakaan.',sy:'Ai-man  mem-ba-ca  bu-ku  di  per-pus-ta-ka-an.',hint:'Lihat ikon buku. Apakah aktiviti yang sesuai di perpustakaan?'},
+ {icon:'🌱',cue:'Siti menjaga pokok bunga di halaman rumah.',stem:'Siti',opts:['menyiram pokok bunga.','memandu bas sekolah.','menggoreng ikan.'],ans:0,full:'Siti menyiram pokok bunga.',sy:'Si-ti  me-nyi-ram  po-kok  bu-nga.',hint:'Pokok memerlukan air untuk hidup.'},
+ {icon:'🍳',cue:'Ibu menyediakan makanan untuk keluarga di dapur.',stem:'Ibu',opts:['memasak nasi di dapur.','membaca buku di bilik.','berenang di kolam.'],ans:0,full:'Ibu memasak nasi di dapur.',sy:'I-bu  me-ma-sak  na-si  di  da-pur.',hint:'Apakah aktiviti biasa dilakukan di dapur?'},
+ {icon:'🐱',cue:'Seekor kucing sedang berehat di atas sofa.',stem:'Kucing itu',opts:['tidur di atas sofa.','berlari di atas papan hitam.','menulis di dalam buku.'],ans:0,full:'Kucing itu tidur di atas sofa.',sy:'Ku-cing  i-tu  ti-dur  di  a-tas  so-fa.',hint:'Kucing itu sedang berehat dan memejamkan mata.'},
+ {icon:'⚽',cue:'Beberapa orang murid berada di padang pada waktu petang.',stem:'Murid-murid',opts:['bermain bola di padang.','membaca di perpustakaan.','membeli roti di kedai.'],ans:0,full:'Murid-murid bermain bola di padang.',sy:'Mu-rid-mu-rid  ber-ma-in  bo-la  di  pa-dang.',hint:'Lihat bola dan tempatnya: padang.'},
+ {icon:'🚗',cue:'Aiman membantu ayah membersihkan kereta di halaman.',stem:'Aiman',opts:['membantu ayah mencuci kereta.','memanjat pokok kelapa.','membakar sampah.'],ans:0,full:'Aiman membantu ayah mencuci kereta.',sy:'Ai-man  mem-ban-tu  a-yah  men-cu-ci  ke-re-ta.',hint:'Apakah yang sedang Aiman lakukan bersama ayah?'},
+ {icon:'🧹',cue:'Murid menjaga kelas supaya sentiasa bersih.',stem:'Kami',opts:['menjaga kebersihan kelas setiap hari.','meninggalkan sampah di lantai.','menconteng meja sekolah.'],ans:0,full:'Kami menjaga kebersihan kelas setiap hari.',sy:'Ka-mi  men-ja-ga  ke-ber-si-han  ke-las  se-ti-ap  ha-ri.',hint:'Pilih perbuatan yang baik untuk kelas.'},
+ {icon:'🥪',cue:'Farah berasa lapar pada waktu rehat.',stem:'Farah',opts:['makan sandwic di kantin.','tidur di atas jalan.','mandi di dalam kelas.'],ans:0,full:'Farah makan sandwic di kantin.',sy:'Fa-rah  ma-kan  sand-wic  di  kan-tin.',hint:'Waktu rehat biasanya murid makan di kantin.'},
+ {icon:'🚌',cue:'Hakim hendak pulang selepas tamat waktu sekolah.',stem:'Hakim',opts:['menaiki bas sekolah.','menyiram papan putih.','memasak di makmal.'],ans:0,full:'Hakim menaiki bas sekolah.',sy:'Ha-kim  me-na-i-ki  bas  se-ko-lah.',hint:'Kenderaan yang digunakan ialah bas sekolah.'},
+ {icon:'🤝',cue:'Sara dan Mei Ling belajar bersama-sama di meja yang sama.',stem:'Sara dan Mei Ling',opts:['belajar bersama-sama.','bergaduh di kantin.','membuang buku ke lantai.'],ans:0,full:'Sara dan Mei Ling belajar bersama-sama.',sy:'Sa-ra  dan  Mei  Ling  be-la-jar  ber-sa-ma-sa-ma.',hint:'Mereka berada bersama untuk belajar.'}
+];
+const REWARDS=[['🧢','Topi Kraf'],['👕','Baju Biru'],['🥾','Kasut Penjelajah'],['🎒','Beg Misi'],['🦺','Zirah Ringan'],['🧤','Sarung Tangan'],['🧣','Skaf Pintar'],['🕶️','Cermin Mata'],['🛡️','Perisai Pena'],['👑','Mahkota Emas']];
+let classList=storage.get('pc_class',[]), classIndex=storage.get('pc_index',0), currentName='', mode='single';
+let completed=[], currentStation=-1, selectedTarget=-1, soundOn=false, focusOn=false, zoomIndex=1, inQuestion=false, finished=false;
+let strokes=0, drawMode='pen', drawing=false, lastX=0,lastY=0;
+
+function showOnly(id){$$('.screen').forEach(s=>s.classList.add('hidden')); if(id) $(id).classList.remove('hidden')}
+$('#goMode').onclick=()=>showOnly('#modeScreen'); $('#backStart').onclick=()=>showOnly('#startScreen'); $('#backMode').onclick=()=>showOnly('#modeScreen');
+$('#singleMode').onclick=()=>{mode='single';$('#singleFields').classList.remove('hidden');$('#classFields').classList.add('hidden');$('#nameTitle').textContent='Nama Murid';showOnly('#nameScreen')};
+$('#classMode').onclick=()=>{mode='class';$('#singleFields').classList.add('hidden');$('#classFields').classList.remove('hidden');$('#nameTitle').textContent='Senarai Kelas';$('#classNames').value=classList.join('\n');showOnly('#nameScreen')};
+$('#startGameBtn').onclick=()=>{
+ if(mode==='single'){
+   currentName=$('#singleName').value.trim()||'Murid'; classList=[currentName]; classIndex=0;
+ }else{
+   classList=$('#classNames').value.split(/\n+/).map(x=>x.trim()).filter(Boolean);
+   if(!classList.length){alert('Masukkan sekurang-kurangnya satu nama murid.');return}
+   classIndex=clamp(classIndex,0,classList.length-1); currentName=classList[classIndex]; storage.set('pc_class',classList);storage.set('pc_index',classIndex);
+ }
+ startWorld();
+};
+
+// ---------- AUDIO RINGKAS (tiada fail luar) ----------
+let audioCtx=null;
+function tone(freq=440,dur=.12,type='sine',gain=.03){if(!soundOn)return;try{audioCtx=audioCtx||new (window.AudioContext||window.webkitAudioContext)();const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.type=type;o.frequency.value=freq;g.gain.value=gain;o.connect(g).connect(audioCtx.destination);o.start();g.gain.exponentialRampToValueAtTime(.001,audioCtx.currentTime+dur);o.stop(audioCtx.currentTime+dur)}catch(e){}}
+function successSound(){tone(523,.11);setTimeout(()=>tone(659,.12),90);setTimeout(()=>tone(784,.16),180)}
+function softWrong(){tone(230,.12,'triangle',.02)}
+$('#soundBtn').onclick=()=>{soundOn=!soundOn;$('#soundBtn').textContent=soundOn?'🔊 Bunyi: Sederhana':'🔇 Bunyi: Senyap';if(soundOn)tone(520,.08)};
+$('#focusBtn').onclick=()=>{focusOn=!focusOn;document.body.classList.toggle('focus',focusOn);$('#focusBtn').textContent=focusOn?'👁 Fokus: Aktif':'👁 Mod Fokus'};
+$('#zoomBtn').onclick=()=>{zoomIndex=(zoomIndex+1)%3;$('#zoomBtn').textContent=['🔎 Zum: Dekat','🔎 Zum: Biasa','🔎 Zum: Jauh'][zoomIndex]};
+
+// ---------- WEBGL ASLI: DUNIA 3D RINGAN ----------
+const canvas=$('#gl'); let gl,program,bufPos,bufCol,bufIdx,uMVP; let lastT=0;
+let player={x:0,z:17,yaw:0}; const keys={};
+const stationPos=[[-18,13],[-7,12],[8,13],[19,10],[-19,-1],[-7,0],[7,-1],[19,-3],[-10,-13],[10,-14]];
+const obstacles=[[-24,6,7,7],[-12,6,5,6],[2,7,6,6],[14,4,6,7],[-23,-9,6,6],[-11,-9,5,6],[2,-10,6,6],[15,-11,6,6]]; // x,z,w,d
+function v3(x,y,z){return [x,y,z]}
+function mat4(){return new Float32Array(16)}
+function ident(){let m=mat4();m[0]=m[5]=m[10]=m[15]=1;return m}
+function mult(a,b){let o=mat4();for(let r=0;r<4;r++)for(let c=0;c<4;c++){o[c*4+r]=a[0*4+r]*b[c*4+0]+a[1*4+r]*b[c*4+1]+a[2*4+r]*b[c*4+2]+a[3*4+r]*b[c*4+3]}return o}
+function perspective(fovy,asp,n,f){let t=1/Math.tan(fovy/2),o=mat4();o[0]=t/asp;o[5]=t;o[10]=(f+n)/(n-f);o[11]=-1;o[14]=2*f*n/(n-f);return o}
+function norm(a){let l=Math.hypot(a[0],a[1],a[2])||1;return [a[0]/l,a[1]/l,a[2]/l]}
+function cross(a,b){return [a[1]*b[2]-a[2]*b[1],a[2]*b[0]-a[0]*b[2],a[0]*b[1]-a[1]*b[0]]}
+function sub(a,b){return [a[0]-b[0],a[1]-b[1],a[2]-b[2]]}
+function lookAt(e,c,up){let z=norm(sub(e,c)),x=norm(cross(up,z)),y=cross(z,x),o=ident();o[0]=x[0];o[4]=x[1];o[8]=x[2];o[1]=y[0];o[5]=y[1];o[9]=y[2];o[2]=z[0];o[6]=z[1];o[10]=z[2];o[12]=-(x[0]*e[0]+x[1]*e[1]+x[2]*e[2]);o[13]=-(y[0]*e[0]+y[1]*e[1]+y[2]*e[2]);o[14]=-(z[0]*e[0]+z[1]*e[1]+z[2]*e[2]);return o}
+function model(x,y,z,sx,sy,sz){let o=ident();o[0]=sx;o[5]=sy;o[10]=sz;o[12]=x;o[13]=y;o[14]=z;return o}
+const cubeVerts=new Float32Array([
+ -1,-1,-1, 1,-1,-1, 1,1,-1,-1,1,-1, -1,-1,1, 1,-1,1, 1,1,1,-1,1,1
+]);
+const cubeIdx=new Uint16Array([0,1,2,0,2,3, 4,6,5,4,7,6, 0,4,5,0,5,1, 3,2,6,3,6,7, 1,5,6,1,6,2, 0,3,7,0,7,4]);
+function initGL(){
+ gl=canvas.getContext('webgl',{antialias:true,alpha:false}); if(!gl){alert('Pelayar ini tidak menyokong WebGL.');return}
+ const vs=`attribute vec3 a;attribute vec3 c;uniform mat4 mvp;varying vec3 vc;void main(){gl_Position=mvp*vec4(a,1.0);vc=c;}`;
+ const fs=`precision mediump float;varying vec3 vc;void main(){gl_FragColor=vec4(vc,1.0);}`;
+ function sh(t,s){let q=gl.createShader(t);gl.shaderSource(q,s);gl.compileShader(q);return q}
+ program=gl.createProgram();gl.attachShader(program,sh(gl.VERTEX_SHADER,vs));gl.attachShader(program,sh(gl.FRAGMENT_SHADER,fs));gl.linkProgram(program);gl.useProgram(program);
+ bufPos=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,bufPos);gl.bufferData(gl.ARRAY_BUFFER,cubeVerts,gl.STATIC_DRAW);let a=gl.getAttribLocation(program,'a');gl.enableVertexAttribArray(a);gl.vertexAttribPointer(a,3,gl.FLOAT,false,0,0);
+ bufCol=gl.createBuffer();bufIdx=gl.createBuffer();gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,bufIdx);gl.bufferData(gl.ELEMENT_ARRAY_BUFFER,cubeIdx,gl.STATIC_DRAW);uMVP=gl.getUniformLocation(program,'mvp');gl.enable(gl.DEPTH_TEST);gl.enable(gl.CULL_FACE);
+ resize();window.addEventListener('resize',resize);
+}
+function resize(){let d=Math.min(devicePixelRatio||1,1.6),w=canvas.clientWidth*d,h=canvas.clientHeight*d;if(canvas.width!==w||canvas.height!==h){canvas.width=w;canvas.height=h;if(gl)gl.viewport(0,0,w,h)}}
+function drawCube(viewProj,x,y,z,sx,sy,sz,col){let colors=new Float32Array(24);for(let i=0;i<8;i++){let shade=i<4?.86:1;colors[i*3]=col[0]*shade;colors[i*3+1]=col[1]*shade;colors[i*3+2]=col[2]*shade}gl.bindBuffer(gl.ARRAY_BUFFER,bufCol);gl.bufferData(gl.ARRAY_BUFFER,colors,gl.DYNAMIC_DRAW);let c=gl.getAttribLocation(program,'c');gl.enableVertexAttribArray(c);gl.vertexAttribPointer(c,3,gl.FLOAT,false,0,0);gl.uniformMatrix4fv(uMVP,false,mult(viewProj,model(x,y,z,sx,sy,sz)));gl.drawElements(gl.TRIANGLES,cubeIdx.length,gl.UNSIGNED_SHORT,0)}
+function isBlocked(nx,nz){if(nx<-29||nx>29||nz<-21||nz>21)return true;for(const [x,z,w,d] of obstacles){if(nx>x-w/2-.7&&nx<x+w/2+.7&&nz>z-d/2-.7&&nz<z+d/2+.7)return true}return false}
+function update(dt){if(inQuestion||finished)return;let dx=0,dz=0;if(keys.w||keys.arrowup)dz-=1;if(keys.s||keys.arrowdown)dz+=1;if(keys.a||keys.arrowleft)dx-=1;if(keys.d||keys.arrowright)dx+=1;let l=Math.hypot(dx,dz);if(l){dx/=l;dz/=l;const sp=4.2;let nx=player.x+dx*sp*dt,nz=player.z+dz*sp*dt;if(!isBlocked(nx,player.z))player.x=nx;if(!isBlocked(player.x,nz))player.z=nz;player.yaw=Math.atan2(dx,dz)}
+ let near=-1,dist=99;stationPos.forEach((p,i)=>{if(completed[i])return;let d=Math.hypot(player.x-p[0],player.z-p[1]);if(d<dist){dist=d;near=i}});if(near>=0&&dist<4.6){currentStation=near;$('#stationHint').style.display='block';$('#stationHint').textContent=`✍️ Stesen ${near+1}: ${QUESTIONS[near].icon} — sedia untuk bina dan tulis ayat.`;$('#interact').style.display='block'}else{$('#stationHint').style.display='none';$('#interact').style.display='none';currentStation=-1}}
+function render(t){if(!gl)return;let dt=Math.min(.04,(t-lastT)/1000||0);lastT=t;update(dt);resize();gl.clearColor(.58,.84,.94,1);gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);
+ let distances=[11,16,22],cd=distances[zoomIndex], eye=[player.x+9,9,player.z+cd], center=[player.x,1.2,player.z-2];let vp=mult(perspective(Math.PI/3,canvas.width/canvas.height,.1,150),lookAt(eye,center,[0,1,0]));
+ drawCube(vp,0,-.65,0,31,.5,23,[.42,.72,.36]);drawCube(vp,0,-.08,0,4,.08,22,[.68,.68,.66]);drawCube(vp,0,-.05,0,30,.06,3,[.72,.72,.70]);
+ // buildings and trees
+ const cols=[[.95,.62,.35],[.38,.67,.91],[.93,.82,.37],[.54,.78,.48]];obstacles.forEach((o,i)=>{let [x,z,w,d]=o;drawCube(vp,x,1.7,z,w/2,2.1,d/2,cols[i%cols.length]);drawCube(vp,x,4.15,z,w/2+.15,.25,d/2+.15,[.86,.24,.23])});
+ [[-27,15],[-25,-1],[27,15],[26,0],[26,-17],[-27,-17],[0,19]].forEach((p,i)=>{drawCube(vp,p[0],1.1,p[1],.35,1.5,.35,[.42,.25,.12]);drawCube(vp,p[0],3.0,p[1],1.2,1.4,1.2,[.19,.58,.27])});
+ stationPos.forEach((p,i)=>{let done=completed[i],pulse=1+(done?0:Math.sin(t*.003+i)*.08);drawCube(vp,p[0],.45,p[1],1.5,.5,1.5,done?[.36,.66,.40]:[.95,.73,.20]);drawCube(vp,p[0],1.7,p[1],1.0*pulse,.75,.18,done?[.55,.75,.58]:[.98,.91,.55]);});
+ // avatar body + accessories
+ drawCube(vp,player.x,.85,player.z,.55,.65,.38,[.18,.48,.80]);drawCube(vp,player.x,1.85,player.z,.40,.40,.40,[.92,.68,.45]);drawCube(vp,player.x-.28,.10,player.z,.18,.48,.20,[.22,.30,.42]);drawCube(vp,player.x+.28,.10,player.z,.18,.48,.20,[.22,.30,.42]);
+ if(completed.length>=1)drawCube(vp,player.x,2.35,player.z,.50,.12,.50,[.93,.65,.12]);if(completed.length>=5)drawCube(vp,player.x,1.0,player.z+.46,.42,.55,.12,[.78,.18,.25]);if(completed.length>=10){drawCube(vp,player.x,2.62,player.z,.52,.10,.52,[1.0,.79,.12]);drawCube(vp,player.x,2.84,player.z,.13,.18,.13,[1.0,.79,.12])}
+ requestAnimationFrame(render)}
+
+window.addEventListener('keydown',e=>{let k=e.key.toLowerCase();if(['w','a','s','d','arrowup','arrowdown','arrowleft','arrowright'].includes(k)){keys[k]=true;e.preventDefault()}if(k==='e'&&currentStation>=0&&!inQuestion)openStation(currentStation)});
+window.addEventListener('keyup',e=>keys[e.key.toLowerCase()]=false);
+$$('.move').forEach(b=>{let k=b.dataset.k;const on=e=>{keys[k]=true;e.preventDefault()},off=e=>{keys[k]=false;e.preventDefault()};b.addEventListener('pointerdown',on);b.addEventListener('pointerup',off);b.addEventListener('pointercancel',off);b.addEventListener('pointerleave',off)});
+$('#interact').onclick=()=>{if(currentStation>=0)openStation(currentStation)};
+
+function startWorld(reset=true){
+ showOnly(null);$('#topbar,#hud,#controls').forEach?.(()=>{}); // harmless for older engines
+ $('#topbar').classList.remove('hidden');$('#hud').classList.remove('hidden');$('#controls').classList.remove('hidden');
+ currentName=currentName||classList[classIndex]||'Murid';if(reset){completed=[];player={x:0,z:17,yaw:0};finished=false}
+ updateHud(); if(!gl)initGL(); requestAnimationFrame(render); tone(440,.08);
+}
+function updateHud(){
+ $('#turnPill').textContent=`👤 GILIRAN: ${currentName}${mode==='class'?` (${classIndex+1}/${classList.length})`:''}`;
+ $('#progressPill').textContent=`⭐ ${completed.length} / ${QUESTIONS.length}`;$('#rewardPill').textContent=`🎒 ${completed.length} aksesori`;
+}
+
+// ---------- STESEN: BALING + MENULIS ----------
+function openStation(i){if(completed.includes(i))return;inQuestion=true;currentStation=i;selectedTarget=-1;strokes=0;drawMode='pen';$('#buildStage').style.display='block';$('#writeStage').style.display='none';$('#questionOverlay').classList.remove('hidden');$('#stationTitle').textContent=`Stesen ${i+1} daripada ${QUESTIONS.length}`;$('#qProgress').style.width=`${(completed.length/QUESTIONS.length)*100}%`;const q=QUESTIONS[i];$('#sceneIcon').textContent=q.icon;$('#sceneText').innerHTML=`${q.cue}<br><br><b>Bina ayat:</b> ${q.stem} ________`;
+ $('#targets').innerHTML='';q.opts.forEach((x,idx)=>{let b=document.createElement('button');b.className='target';b.textContent=x;b.onclick=()=>{$$('.target').forEach(t=>t.classList.remove('selected'));b.classList.add('selected');selectedTarget=idx;$('#throwBtn').disabled=false;tone(350,.05)};$('#targets').appendChild(b)});$('#throwBtn').disabled=true;$('#feedback').className='feedback';$('#feedback').textContent='';$('#inkState').textContent='Belum ada tulisan';$('#finishWriting').disabled=true;clearWriting();
+}
+$('#closeQuestion').onclick=()=>{inQuestion=false;$('#questionOverlay').classList.add('hidden')};
+$('#hintBtn').onclick=()=>{const q=QUESTIONS[currentStation];const f=$('#feedback');f.className='feedback ok';f.textContent='💡 '+q.hint;tone(480,.07)};
+$('#throwBtn').onclick=()=>{if(selectedTarget<0)return;animateThrow(selectedTarget);setTimeout(()=>{const q=QUESTIONS[currentStation],f=$('#feedback');if(selectedTarget===q.ans){f.className='feedback ok';f.textContent='✅ Tepat! Ayat itu lengkap dan bermakna.';successSound();$$('.target').forEach((x,j)=>{if(j!==q.ans)x.classList.add('locked')});setTimeout(showWriting,650)}else{f.className='feedback bad';f.textContent='Cuba lagi. Lihat gambar dan baca ayat perlahan-lahan.';softWrong();selectedTarget=-1;$('#throwBtn').disabled=true;$$('.target').forEach(x=>x.classList.remove('selected'))}},590)};
+function animateThrow(idx){let from=$('#throwBlock').getBoundingClientRect(),to=$$('.target')[idx].getBoundingClientRect(),d=document.createElement('div');d.className='fly';d.style.left=(from.left+from.width/2-22)+'px';d.style.top=(from.top+from.height/2-22)+'px';document.body.appendChild(d);requestAnimationFrame(()=>{let dx=to.left+to.width/2-(from.left+from.width/2),dy=to.top+to.height/2-(from.top+from.height/2);d.style.transform=`translate(${dx}px,${dy}px) rotate(420deg) scale(.55)`;d.style.opacity='.25'});setTimeout(()=>d.remove(),700)}
+function showWriting(){const q=QUESTIONS[currentStation];$('#buildStage').style.display='none';$('#writeStage').style.display='block';$('#modelSentence').textContent=q.full;$('#syllables').textContent='Bantuan suku kata: '+q.sy;resizeWritingCanvas();}
+
+const wc=$('#writeCanvas'),ctx=wc.getContext('2d');
+function resizeWritingCanvas(){let r=wc.getBoundingClientRect(),ratio=Math.min(devicePixelRatio||1,2),old=wc.toDataURL();wc.width=Math.max(300,Math.floor(r.width*ratio));wc.height=Math.floor(250*ratio);ctx.scale(ratio,ratio);ctx.lineCap='round';ctx.lineJoin='round';ctx.lineWidth=5;ctx.strokeStyle='#17324d';ctx.fillStyle='#fff';let im=new Image();im.onload=()=>{try{ctx.drawImage(im,0,0,r.width,250)}catch(e){}};im.src=old}
+function pos(e){let r=wc.getBoundingClientRect();return [(e.clientX-r.left),(e.clientY-r.top)]}
+wc.addEventListener('pointerdown',e=>{drawing=true;wc.setPointerCapture(e.pointerId);[lastX,lastY]=pos(e);e.preventDefault()});
+wc.addEventListener('pointermove',e=>{if(!drawing)return;let [x,y]=pos(e);ctx.beginPath();ctx.globalCompositeOperation=drawMode==='eraser'?'destination-out':'source-over';ctx.lineWidth=drawMode==='eraser'?24:5;ctx.strokeStyle='#17324d';ctx.moveTo(lastX,lastY);ctx.lineTo(x,y);ctx.stroke();lastX=x;lastY=y;strokes++;if(strokes>8){$('#inkState').textContent='Tulisan dikesan ✓';$('#inkState').style.color='#168f55';$('#finishWriting').disabled=false}e.preventDefault()});
+wc.addEventListener('pointerup',()=>drawing=false);wc.addEventListener('pointercancel',()=>drawing=false);
+$('#penBtn').onclick=()=>{drawMode='pen';$('#penBtn').classList.add('active');$('#eraserBtn').classList.remove('active')};$('#eraserBtn').onclick=()=>{drawMode='eraser';$('#eraserBtn').classList.add('active');$('#penBtn').classList.remove('active')};$('#clearBtn').onclick=clearWriting;
+function clearWriting(){if(!ctx)return;ctx.save();ctx.setTransform(1,0,0,1,0,0);ctx.clearRect(0,0,wc.width,wc.height);ctx.restore();strokes=0;$('#inkState').textContent='Belum ada tulisan';$('#inkState').style.color='var(--muted)';$('#finishWriting').disabled=true}
+$('#finishWriting').onclick=()=>completeStation();
+function completeStation(){let i=currentStation;if(!completed.includes(i))completed.push(i);saveEvidence(i);$('#questionOverlay').classList.add('hidden');inQuestion=false;updateHud();showReward(i);if(completed.length===QUESTIONS.length){setTimeout(()=>finishGame(),1450)}}
+function saveEvidence(i){let ev=storage.get('pc_evidence',{}),key=currentName+'|'+new Date().toISOString().slice(0,10);ev[key]=ev[key]||{};try{ev[key][i]=wc.toDataURL('image/png')}catch(e){};storage.set('pc_evidence',ev)}
+function showReward(i){const r=REWARDS[i];$('#rewardIcon').textContent=r[0];$('#rewardName').textContent=r[1];$('#rewardText').textContent=i===9?'Mahkota terakhir dipakai. Semua misi selesai!':'Aksesori ini terus dipakai pada watak anda.';$('#rewardPop').style.display='block';successSound()}
+$('#continueBtn').onclick=()=>{$('#rewardPop').style.display='none'};
+
+function finishGame(){finished=true;$('#rewardPop').style.display='none';const now=new Date(),records=storage.get('pc_records',[]);records.push({nama:currentName,tarikh:now.toLocaleDateString('ms-MY'),masa:now.toLocaleTimeString('ms-MY',{hour:'2-digit',minute:'2-digit'}),stesen:completed.length,skor:'10/10',catatan:'Membina ayat melalui pilihan frasa dan menulis semula ayat pada kanvas.'});storage.set('pc_records',records);confetti();$('#topbar').classList.add('hidden');$('#hud').classList.add('hidden');$('#controls').classList.add('hidden');$('#finishName').textContent=currentName;let ni=(classIndex+1)%Math.max(classList.length,1);$('#nextNameText').textContent=mode==='class'&&classList.length>1?`Seterusnya: ${classList[ni]}`:'Mulakan giliran baharu.';showOnly('#finishScreen')}
+function confetti(){let box=$('#confetti');box.innerHTML='';for(let i=0;i<70;i++){let d=document.createElement('div');d.className='conf';d.style.left=(Math.random()*100)+'%';d.style.animationDelay=(Math.random()*.7)+'s';d.style.transform=`rotate(${Math.random()*180}deg)`;if(i%3===1)d.style.background='#64c7ff';if(i%3===2)d.style.background='#77cf6b';box.appendChild(d)}setTimeout(()=>box.innerHTML='',3800)}
+$('#nextStudent').onclick=()=>{if(mode==='class'&&classList.length){classIndex=(classIndex+1)%classList.length;storage.set('pc_index',classIndex);currentName=classList[classIndex]}else currentName='Murid';startWorld(true)};
+$('#replayBtn').onclick=()=>startWorld(true);$('#menuBtn').onclick=()=>{finished=false;showOnly('#startScreen')};$('#endBtn').onclick=()=>{if(confirm('Tamatkan giliran sekarang? Kemajuan yang telah selesai akan direkodkan.'))finishGame()};
+
+// ---------- REKOD PBD ----------
+function openRecords(){let rec=storage.get('pc_records',[]),html='<table><thead><tr><th>Nama</th><th>Tarikh</th><th>Masa</th><th>Stesen</th><th>Skor</th><th>Catatan</th></tr></thead><tbody>';if(!rec.length)html+='<tr><td colspan="6">Belum ada rekod.</td></tr>';else rec.slice().reverse().forEach(r=>html+=`<tr><td>${esc(r.nama)}</td><td>${esc(r.tarikh)}</td><td>${esc(r.masa)}</td><td>${r.stesen}</td><td>${esc(r.skor)}</td><td>${esc(r.catatan)}</td></tr>`);html+='</tbody></table>';$('#records').innerHTML=html;showOnly('#recordsScreen')}
+function esc(s){return String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
+$('#recordsBtn').onclick=openRecords;$('#openRecordsStart').onclick=openRecords;$('#closeRecords').onclick=()=>{if(finished)showOnly('#finishScreen');else showOnly('#startScreen')};
+$('#downloadCsv').onclick=()=>{let rec=storage.get('pc_records',[]),rows=[['Nama','Tarikh','Masa','Stesen Selesai','Skor','Catatan'],...rec.map(r=>[r.nama,r.tarikh,r.masa,r.stesen,r.skor,r.catatan])],csv='\uFEFF'+rows.map(row=>row.map(x=>'"'+String(x).replace(/"/g,'""')+'"').join(',')).join('\n'),blob=new Blob([csv],{type:'text/csv;charset=utf-8'}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='rekod_pbd_penacraft.csv';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),500)};
+$('#clearRecords').onclick=()=>{if(confirm('Padam semua rekod PBD pada peranti ini?')){storage.set('pc_records',[]);openRecords()}};
+
+// Pastikan tiada rujukan luar: semua grafik, audio dan logik dijana dalam fail ini.
+initGL();
+requestAnimationFrame(render);
+</script>
+</body>
+</html>
